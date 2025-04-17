@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Speight’s Tasting Room - Beer Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f1c2f;
+      color: #fefefe;
+      max-width: 800px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #f2a900;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    select, input[type="time"], input[type="date"] {
+      padding: 10px;
+      width: 100%;
+      margin-top: 5px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      background: #fff;
+      color: #000;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 14px;
+      font-size: 1em;
+      width: 100%;
+      border: none;
+      background-color: #f2a900;
+      color: #0f1c2f;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #c98a00;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #f2a900;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2a900;
+      color: #0f1c2f;
+    }
+
+    #summary {
+      background-color: #1b2b45;
+      padding: 20px;
+      border-radius: 6px;
+      margin-top: 30px;
+    }
+
+    .highlight {
+      font-weight: bold;
+      color: #f2a900;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 0.9em;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍺 Speight’s Beer Tracker</h1>
+
+  <label for="tourDate">Tour Date:</label>
+  <input type="date" id="tourDate" required />
+
+  <label for="tourTime">Tour Time:</label>
+  <select id="tourTime" onchange="handleTimeChange()">
+    <option value="">-- Select --</option>
+    <option value="12:00">12:00 PM</option>
+    <option value="14:00">2:00 PM</option>
+    <option value="16:00">4:00 PM</option>
+    <option value="18:00">6:00 PM</option>
+    <option value="custom">Private Tour (Custom Time)</option>
+  </select>
+
+  <div id="customTimeContainer" style="display: none;">
+    <label for="customTime">Enter Custom Time:</label>
+    <input type="time" id="customTime" />
+  </div>
+
+  <label for="beerType">Beer Type:</label>
+  <select id="beerType">
+    <option value="">-- Select --</option>
+    <option value="Ultra">Ultra</option>
+    <option value="Mid Ale">Mid Ale</option>
+    <option value="Old Dark">Old Dark</option>
+    <option value="Gold Medal">Gold Medal</option>
+    <option value="Cloudy Apple Cider">Cloudy Apple Cider</option>
+    <option value="Hazy Pale Ale">Hazy Pale Ale</option>
+    <option value="Triple Hop">Triple Hop</option>
+    <option value="Black Rock">Black Rock (Guest Tap)</option>
+    <option value="Panhead Super Charger">Panhead Super Charger (Guest Tap)</option>
+  </select>
+
+  <button onclick="logBeer()">Log Beer</button>
+
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Beer Type</th>
+      </tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+
+  <button onclick="submitTour()">End of Tour & Download PDF</button>
+
+  <div id="summary" style="display: none;">
+    <h2>Tour Summary</h2>
+    <p id="totalServings" class="highlight"></p>
+    <p id="totalVolume" class="highlight"></p>
+    <div id="beerBreakdown" style="margin-top: 20px;"></div>
+  </div>
+
+  <footer>
+    Speight’s Tasting Room • Made with 🍻 by Annika Marriner
+  </footer>
+
+  <script>
+    const logBody = document.getElementById("logBody");
+
+    function handleTimeChange() {
+      const tourTime = document.getElementById("tourTime").value;
+      const customContainer = document.getElementById("customTimeContainer");
+      customContainer.style.display = tourTime === "custom" ? "block" : "none";
+    }
+
+    function logBeer() {
+      const date = document.getElementById("tourDate").value;
+      const timeSelect = document.getElementById("tourTime").value;
+      const customTime = document.getElementById("customTime").value;
+      const beerType = document.getElementById("beerType").value;
+
+      const time = timeSelect === "custom" ? customTime : timeSelect;
+
+      if (!date || !time || !beerType) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      const entry = { date, time, beerType };
+
+      const logs = JSON.parse(localStorage.getItem("beerLogs") || "[]");
+      logs.push(entry);
+      localStorage.setItem("beerLogs", JSON.stringify(logs));
+
+      addLogToTable(entry);
+    }
+
+    function addLogToTable({ date, time, beerType }) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${date}</td><td>${time}</td><td>${beerType}</td>`;
+      logBody.appendChild(row);
+    }
+
+    async function submitTour() {
+      const logs = JSON.parse(localStorage.getItem("beerLogs") || "[]");
+
+      if (logs.length === 0) {
+        alert("No beers have been logged yet!");
+        return;
+      }
+
+      const totalServings = logs.length;
+      const totalVolumeMl = totalServings * 150;
+      const totalVolumeL = (totalVolumeMl / 1000).toFixed(2);
+
+      const breakdown = {};
+      logs.forEach(log => {
+        breakdown[log.beerType] = (breakdown[log.beerType] || 0) + 150;
+      });
+
+      // Update the DOM
+      document.getElementById("summary").style.display = "block";
+      document.getElementById("totalServings").innerText = `Total Beers Poured: ${totalServings}`;
+      document.getElementById("totalVolume").innerText = `Total Volume: ${totalVolumeMl} mL (${totalVolumeL} L)`;
+
+      const breakdownContainer = document.getElementById("beerBreakdown");
+      breakdownContainer.innerHTML = "";
+      for (const [beer, volume] of Object.entries(breakdown)) {
+        breakdownContainer.innerHTML += `<p class="highlight">${volume} mL - ${beer}</p>`;
+      }
+
+      // Generate PDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Speight’s Beer Tour Summary", 14, 20);
+      doc.setFontSize(12);
+      doc.text(`Total Beers Poured: ${totalServings}`, 14, 35);
+      doc.text(`Total Volume: ${totalVolumeMl} mL (${totalVolumeL} L)`, 14, 45);
+
+      let y = 60;
+      doc.setFontSize(14);
+      doc.text("Per-Beer Breakdown:", 14, y);
+      y += 10;
+      doc.setFontSize(12);
+
+      for (const [beer, volume] of Object.entries(breakdown)) {
+        doc.text(`• ${beer}: ${volume} mL`, 18, y);
+        y += 8;
+      }
+
+      doc.save("Speights_Tour_Summary.pdf");
+
+      // Clear log
+      localStorage.removeItem("beerLogs");
+      logBody.innerHTML = "";
+    }
+  </script>
+</body>
+</html>
