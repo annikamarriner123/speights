@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8" />
   <title>Speight’s Tasting Room - Beer Tracker</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0f1c2f;
-      color: #fefefe;
-      max-width: 800px;
-      margin: auto;
-      padding: 40px 20px;
-    }
+  body {
+  font-family: 'Segoe UI', sans-serif;
+  background-image: url("/speights.jpg"); 
+  background-size: cover;                
+  background-position: center;            
+  background-repeat: no-repeat;           
+  color: #fefefe;
+  margin: auto;
+  padding: 40px 20px;
+  height: 100%;
+}
+
 
     h1 {
       text-align: center;
@@ -29,7 +34,7 @@
     }
 
     select, input[type="time"], input[type="date"] {
-      padding: 10px;
+      padding: 15px;
       width: 100%;
       margin-top: 5px;
       font-size: 1em;
@@ -37,6 +42,29 @@
       border: none;
       background: #fff;
       color: #000;
+    }
+
+    /* tour date shorter width and centered*/
+    input[type="date"] {
+      width: 50%;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* tour date label centered */
+    label[for="tourDate"] {
+      text-align: center;
+      padding-bottom: 2vh;
+      font-size: 2.5vh;
+      color: #f2a900;
+    }
+
+    /* label for time and on-tap beer bigger */
+    label[for="tourTime"],
+    label[for="beerType"] {
+      font-size: 2.5vh;
+      padding-bottom: 2vh;
+      color: #f2a900;
     }
 
     button {
@@ -89,12 +117,13 @@
     footer {
       text-align: center;
       margin-top: 50px;
-      font-size: 0.9em;
-      color: #999;
+      font-size: 2vh;
+      color: white;
     }
   </style>
 </head>
 <body>
+<div style="background-color: rgba(0, 0, 0, 0.5); padding: 40px 20px;">
 
   <h1>🍺 Speight’s Beer Tracker</h1>
 
@@ -116,7 +145,7 @@
     <input type="time" id="customTime" />
   </div>
 
-  <label for="beerType">Beer Type:</label>
+  <label for="beerType">On-Tap Beer:</label>
   <select id="beerType">
     <option value="">-- Select --</option>
     <option value="Ultra">Ultra</option>
@@ -129,6 +158,8 @@
     <option value="Black Rock">Black Rock (Guest Tap)</option>
     <option value="Panhead Super Charger">Panhead Super Charger (Guest Tap)</option>
   </select>
+
+  <!-- add in the menu beverages if needed -->
 
   <button onclick="logBeer()">Log Beer</button>
 
@@ -153,8 +184,10 @@
   </div>
 
   <footer>
-    Speight’s Tasting Room • Made with 🍻 by Annika Marriner
+   Tasting Room • Made by Annika Marriner
+ 
   </footer>
+  </div>
 
   <script>
     const logBody = document.getElementById("logBody");
@@ -226,6 +259,22 @@
       const doc = new jsPDF();
       doc.setFontSize(18);
       doc.text("Speight’s Beer Tour Summary", 14, 20);
+     // Date and time
+        const tourDate = document.getElementById("tourDate").value;
+        const tourTime = document.getElementById("tourTime").value;
+        const customTime = document.getElementById("customTime").value;
+        const time = tourTime === "custom" ? customTime : tourTime;
+
+        // Adjust the Y positions for the Date and Time so they don't overlap
+        doc.setFontSize(12);
+        doc.text(`Date: ${tourDate}`, 14, 30);  // First line: Date
+        // doc.text(`Time: ${time}`, 14, 40);  // Second line: Time
+        //am or pm
+        const amPm = time >= 12 ? "PM" : "AM";
+        doc.text(`Time: ${time} ${amPm}`, 14, 50);  // Third line: AM/PM
+
+
+        
       doc.setFontSize(12);
       doc.text(`Total Beers Poured: ${totalServings}`, 14, 35);
       doc.text(`Total Volume: ${totalVolumeMl} mL (${totalVolumeL} L)`, 14, 45);
